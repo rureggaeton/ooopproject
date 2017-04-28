@@ -17,8 +17,11 @@ int main() {
 		shapeContainer.push_back(factory.CreateRandomShape());
 	}
 	std::cout << "Shape count: " << Shape::GetCount() << std::endl;
-	for (size_t i = 0; i < shapeContainer.size(); ++i) {
-		std::cout << *shapeContainer[i] << std::endl;
+	for (Container<Shape *>::Iterator it = shapeContainer.begin(); it != shapeContainer.end(); ++it) {
+		std::cout << **it << std::endl;
+	}
+	for (Container<Shape *>::Iterator it = shapeContainer.begin(); it != shapeContainer.end(); ++it) {
+		delete *it;
 	}
 	shapeContainer.clear();
 	std::cout << "Shape count after clear: " << Shape::GetCount() << std::endl;

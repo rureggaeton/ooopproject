@@ -117,7 +117,7 @@ Shape * ShapeCreator<Polyline>::Create() const {
 	for (size_t i = 0; i < number; ++i) {
 		double x = Rand(-Rand());
 		double y = Rand(-Rand());
-		newPolyline->PushBackPoint(new Point(x, y));
+		newPolyline->PushBackPoint(Point(x, y));
 	}
 	return newPolyline;
 }
@@ -128,7 +128,7 @@ Shape * ShapeCreator<Polygon>::Create() const {
 	for (size_t i = 0; i < number; ++i) {
 		double x = Rand(-Rand());
 		double y = Rand(-Rand());
-		newPolygon->PushBackPoint(new Point(x, y));
+		newPolygon->PushBackPoint(Point(x, y));
 	}
 	return newPolygon;
 }

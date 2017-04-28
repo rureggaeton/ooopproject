@@ -4,7 +4,11 @@ template<class T>
 class Container {
 public:
 	Container() : _front(nullptr), _back(nullptr), _size(0) {};
-	Container(const Container& iOther) = delete;
+	Container(const Container& iOther) {
+		for (Iterator it = iOther.begin(); it != iOther.end(); ++it) {
+			this->push_back(*it);
+		}
+	};
 	~Container();
 	unsigned int size() const;
 	bool empty() const;
@@ -20,18 +24,76 @@ private:
 	struct Vertex {
 		Vertex() = delete;
 		~Vertex() {
-			delete _value;
 		}
 		explicit Vertex(const T & value) : _next(nullptr), _prev(nullptr), _value(value) {};
 		Vertex * _next;
 		Vertex * _prev;
 		T _value;
 	};
-
+public:
+	class Iterator {
+	public:
+		Iterator() : _currVertex(nullptr) {};
+		Iterator(Vertex * vertex) : _currVertex(vertex) {};
+		Iterator & operator ++();
+		bool operator !=(const Iterator & iter) const;
+		T operator *();
+		T * operator ->();
+	private:
+		Vertex * _currVertex;
+	};
+	Iterator begin() const;
+	Iterator end() const;
+private:
 	Vertex * _front;
 	Vertex * _back;
 	unsigned int _size;
 };
+
+template <class T>
+typename Container<T>::Iterator & Container<T>::Iterator::operator ++() {
+	try {
+		if (!_currVertex) {
+			throw "Out of range";
+		}
+		_currVertex = _currVertex->_next;
+		return *this;
+	}
+	catch (const std::string & str) {
+		std::cout << str << std::endl;
+	}
+}
+
+template <class T>
+bool Container<T>::Iterator::operator !=(const typename Container<T>::Iterator & iter) const {
+	return _currVertex != iter._currVertex;
+}
+
+template <class T>
+T Container<T>::Iterator::operator *() {
+	try {
+		if (!_currVertex) {
+			throw "Out of range";
+		}
+		return _currVertex->_value;
+	}
+	catch (const std::string & str) {
+		std::cout << str << std::endl;
+	}
+}
+
+template <class T>
+T * Container<T>::Iterator::operator ->() {
+	try {
+		if (!_currVertex) {
+			throw "Out of range";
+		}
+		return &_currVertex->_value;
+	}
+	catch (const std::string & str) {
+		std::cout << str << std::endl;
+	}
+}
 
 template<class T>
 Container<T>::~Container() {
@@ -152,6 +214,16 @@ void Container<T>::clear() {
 }
 
 template<class T>
+typename Container<T>::Iterator Container<T>::begin() const {
+	return Iterator(_front);
+}
+
+template<class T>
+typename Container<T>::Iterator Container<T>::end() const {
+	return Iterator();
+}
+
+template<class T>
 T & Container<T>::operator[](size_t i) const {
 	try {
 		if (i < 0 && i >= _size) {
@@ -166,5 +238,6 @@ T & Container<T>::operator[](size_t i) const {
 	}
 	catch (const std::string & str) {
 		std::cout << str << std::endl;
+		return front();
 	}
 }

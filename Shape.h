@@ -25,8 +25,8 @@ unsigned int Shape::_count = 0;
 
 class Point : public Shape,  public Named {
 public:
-	Point(std::string name = "defaultPoint") : _x(0), _y(0), Named(name) {};
-	Point(double x, double y, std::string name = "defaultPoint") : _x(x), _y(y), Named(name) {};
+	Point(const std::string & name = "defaultPoint") : _x(0), _y(0), Named(name) {};
+	Point(double x, double y, const std::string & name = "defaultPoint") : _x(x), _y(y), Named(name) {};
 	Point(const Point & p) : _x(p._x), _y(p._y), Named(p.GetName()) {};
 	~Point() {};
 	double GetX() const {
@@ -57,7 +57,7 @@ private:
 class Circle : public Shape, public Named {
 public:
 	Circle() = delete;
-	Circle(const Point & O, double r, std::string name = "defaultCircle") : _O(O), Named(name) {
+	Circle(const Point & O, double r, const std::string & name = "defaultCircle") : _O(O), Named(name) {
 		try{
 			if (r < 0) {
 				throw "Wrong radius";
@@ -104,7 +104,7 @@ private:
 class Rect : public Shape, public Named {
 public:
 	Rect() = delete;
-	Rect(const Point & p1, const Point & p2, std::string name = "defaultRect") : Named(name) {
+	Rect(const Point & p1, const Point & p2, const std::string & name = "defaultRect") : Named(name) {
 		try{
 			if (p1.GetX() > p2.GetX() || p1.GetY() > p2.GetY()) {
 				throw "Wrong rectangle";
@@ -184,8 +184,8 @@ private:
 
 class Square : public Rect {
 public:
-	Square(std::string name = "defaultSquare") = delete;
-	Square(const Point & p1, double l, std::string name = "defaultSquare") : Rect(p1, Point(p1.GetX() + l, p1.GetY() + l), name) {};
+	Square(const std::string & name = "defaultSquare") = delete;
+	Square(const Point & p1, double l,const std::string & name = "defaultSquare") : Rect(p1, Point(p1.GetX() + l, p1.GetY() + l), name) {};
 	Square(const Square & sq) : Rect(sq) {};
 	~Square() {};
 	double GetSideLength() const {
@@ -211,20 +211,20 @@ public:
 
 class Polyline : public Shape, public Named {
 public:
-	Polyline(std::string name = "defaultPolyline") : _points(), Named(name) {};
-	Polyline(const Container<Point *> & points, std::string name = "defaultPolyline") = delete;
-	Polyline(const Polyline & polyline) = delete;
+	Polyline(const std::string & name = "defaultPolyline") : _points(), Named(name) {};
+	Polyline(const Container<Point> & points, const std::string & name = "defaultPolyline") : _points(points), Named(name) {};
+	Polyline(const Polyline & polyline) : _points(polyline.GetPoints()), Named(polyline.GetName()) {};
 	~Polyline() {};
 	std::string GetPrintInfo() const {
 		std::string info = Named::GetPrintInfo() + "( Perimetr: " + std::to_string(this->GetLength()) +
-			(GetFrontPoint() ? ("\nFirst point: " + GetFrontPoint()->GetPrintInfo()) : "") + (GetBackPoint() ? ("End point: " + GetBackPoint()->GetPrintInfo()) : "") + " )\n";
+			(!_points.empty() ? ("\nFirst point: " + GetFrontPoint().GetPrintInfo() + "End point: " + GetBackPoint().GetPrintInfo()) : "") + " )\n";
 		return info;
 	}
-	void PushBackPoint(Point * point) {
+	void PushBackPoint(const Point & point) {
 		_points.push_back(point);
 		return;
 	}
-	void PushFrontPoint(Point * point) {
+	void PushFrontPoint(const Point & point) {
 		_points.push_front(point);
 		return;
 	}
@@ -236,10 +236,10 @@ public:
 		_points.pop_front();
 		return;
 	}
-	Point * GetBackPoint() const {
+	Point & GetBackPoint() const {
 		return _points.back();
 	}
-	Point * GetFrontPoint() const {
+	Point & GetFrontPoint() const {
 		return _points.front();
 	}
 	double GetLength() const {
@@ -247,23 +247,29 @@ public:
 		if (_points.empty()) {
 			return ans;
 		}
-		Point * prevPoint = _points.front();
-		for (size_t i = 1; i < _points.size(); ++i) {
-			Point * nextPoint = _points[i];
-			ans += prevPoint->GetDistance(*nextPoint);
+		Point prevPoint = _points.front();
+		Container<Point>::Iterator startIt = ++_points.begin();
+		for (Container<Point>::Iterator it = startIt; it != _points.end(); ++it) {
+			Point nextPoint = *it;
+			ans += prevPoint.GetDistance(nextPoint);
 		}
 		return ans;
 	}
+	Container<Point> GetPoints() const{
+		return _points;
+	}
 protected:
-	Container<Point *> _points;
+	Container<Point> _points;
 };
 
 class Polygon : public Polyline {
 public:
-	Polygon(std::string name = "defaultPolygon") : Polyline(name) {};
-	Polygon(const Container<Point *> & points, std::string name = "defaultPolygon") = delete;
-	Polygon(const Polyline & polyline, std::string name = "defaultPolygon") = delete;
-	Polygon(const Polygon & polygon) = delete;
+	Polygon(const std::string & name = "defaultPolygon") : Polyline(name) {};
+	Polygon(const Container<Point> & points, const std::string & name = "defaultPolygon") : Polyline(points, name) {};
+	Polygon(const Polyline & polyline, const std::string & name = "defaultPolygon") : Polyline(polyline) {
+		SetName(name);
+	};
+	Polygon(const Polygon & polygon) : Polyline(polygon) {};
 	~Polygon() {};
 	std::string GetPrintInfo() const {
 		std::string info = Named::GetPrintInfo() + "( Perimetr: " + std::to_string(this->GetPerimetr()) + " )\n";
@@ -274,10 +280,10 @@ public:
 		if (_points.empty()) {
 			return ans;
 		}
-		Point * prevPoint = _points.back();
-		for (size_t i = 0; i < _points.size(); ++i) {
-			Point * nextPoint = _points[i];
-			ans += prevPoint->GetDistance(*nextPoint);
+		Point prevPoint = _points.back();
+		for (Container<Point>::Iterator it = _points.begin(); it != _points.end(); ++it) {
+			Point nextPoint = *it;
+			ans += prevPoint.GetDistance(nextPoint);
 		}
 		return ans;
 	}
